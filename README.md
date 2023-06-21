@@ -24,6 +24,7 @@ wifi device in `/sys/kernel/debug/ieee80211/<phy>/rc/`:
 | [`api_info`](#api_info---static-api-information) | debugfs | *\[read-only\]* Upon read, prints static information about the API, like rate definitions, and per-phy information, including specific hardware capabilities, virtual interfaces, etc. Output is in CSV format. |
 | [`api_control`](#api_control---commands)         | debugfs | *\[write-only\]* Upon write, a supported command is parsed and executed. The available commands are listed below.|
 | [`api_event`](api_event---monitoring-tasks)      | relayfs | *\[read-only\]* Continuously exposes monitoring information like txs and rxs traces, depending on what has been enabled before.|
+| [`api_phy`](#api_phy---phy-specific-api-info)    | debugfs | *\[read-only\]* Exposes phy-specific information including driver name, ifaces, and TPC capabilities.|
 
 **All API outputs and commands use a CSV-like format**
 
@@ -178,7 +179,7 @@ Reset the Minstrel-HT statistics for one or all connected STAs.
 **Parameters:**   
 | | |
 |:--|:--|
-| `macaddr` | The MAC address of the STA for which the tpc_mode should be set, e.g. `aa:bb:cc:dd:ee:ff`, or `all` to perform the action for all currently connected STAs. |
+| `macaddr` | The MAC address of the STA for which the statistics should be reset, e.g. `aa:bb:cc:dd:ee:ff`, or `all` to perform the action for all currently connected STAs. |
 
 ## `api_event` - Monitoring tasks
 
@@ -290,6 +291,26 @@ phy1;<timestamp>;best_rates;<macaddr>;<maxtp0>;<maxtp1>;<maxtp2>;<maxtp3>;<maxpr
 phy1;17503da1e84ec73d;best_rates;04:f0:21:26:d9:25;94;93;c4;92;c4
 
 > TODO: Explain example
+
+## `api_phy` - PHY-specific API info
+
+PHY-specific information is exposed separately so clients only need to read `api_info` once and can retrieve the much smaller PHY-specific info from `api_phy` for each PHY. This file uses the format as follows:
+```
+<type>;<info>
+```
+`<type>` denotes the type of information. Currently, the following types are used:
+| Type  | Information content |
+|:------|:--------------------|
+| `drv` | The driver name that is loaded for the current PHY. |
+| `if`  | Virtual interfaces associated with the current PHY. |
+| `rc_mode` | Current control mode of minstrel rate control / API. |
+
+An example output of `api_phy` may be:
+```
+drv;ath9k
+if;wlan2
+rc_mode;auto
+```
 
 ## Typical workflow: Set MRR chain with rates and counts + validation
 
