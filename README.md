@@ -2,8 +2,6 @@
 
 The rate control API enables to access information and control parameters of kernel space rate-control from the user space. In addition to enabling monitoring of status information, the API allows to execute routines to perform rate setting based on an algorithm implemented in user space. The API is designed for WiFi systems running a Linux kernel in general. However, our testing only includes OpenWrt-based WiFi Systems.
 
-Felix Fietkau is the maintainer of the API.
-
 Latest version of OpenWrt with the patches related to the Rate Control API is available at
 
 [https://github.com/SupraCoNeX/scnx-openwrt](https://github.com/SupraCoNeX/scnx-openwrt)
@@ -23,8 +21,8 @@ wifi device in `/sys/kernel/debug/ieee80211/<phy>/rc/`:
 |:-------------|:----------|:-------------|
 | [`api_info`](#api_info---static-api-information) | debugfs | *\[read-only\]* Upon read, prints static information about the API, like rate definitions, and per-phy information, including specific hardware capabilities, virtual interfaces, etc. Output is in CSV format. |
 | [`api_control`](#api_control---commands)         | debugfs | *\[write-only\]* Upon write, a supported command is parsed and executed. The available commands are listed below.|
-| [`api_event`](api_event---monitoring-tasks)      | relayfs | *\[read-only\]* Continuously exposes monitoring information like txs and rxs traces, depending on what has been enabled before.|
-| [`api_phy`](#api_phy---phy-specific-api-info)    | debugfs | *\[read-only\]* Exposes phy-specific information including driver name, ifaces, and TPC capabilities.|
+| [`api_event`](api_event---monitoring-tasks)      | relayfs | *\[read-only\]* Continuously emits monitoring information like txs and rxs traces, depending on what has been enabled before.|
+| [`api_phy`](#api_phy---phy-specific-api-info)    | debugfs | *\[read-only\]* Emits phy-specific information including driver name, ifaces, TPC capabilities, etc.|
 
 **All API outputs and commands use a CSV-like format**
 
@@ -32,27 +30,28 @@ wifi device in `/sys/kernel/debug/ieee80211/<phy>/rc/`:
 
 Example output of `api_info` for a PHY (`/sys/kernel/debug/ieee80211/<phy>/rc/api_info`):
 ```
-orca_version;1
+orca_version;2;0;f
 #group;index;offset;type;nss;bw;gi;airtime0;airtime1;airtime2;airtime3;airtime4;airtime5;airtime6;airtime7;airtime8;airtime9
-#sta;action;macaddr;iface;rc_mode;tpc_mode;overhead_mcs;overhead_legacy;mcs0;mcs1;mcs2;mcs3;mcs4;mcs5;mcs6;mcs7;mcs8;mcs9;mcs10;mcs11;mcs12;mcs13;mcs14;mcs15;mcs16;mcs17;mcs18;mcs19;mcs20;mcs21;mcs22;mcs23;mcs24;mcs25;mcs26;mcs27;mcs28;mcs29;mcs30;mcs31;mcs32;mcs33;mcs34;mcs35;mcs36;mcs37;mcs38;mcs39;mcs40;mcs41
+#sta;action;macaddr;iface;rc_mode;tpc_mode;overhead_mcs;overhead_legacy;update_freq;sample_freq;mcs0;mcs1;mcs2;mcs3;mcs4;mcs5;mcs6;mcs7;mcs8;...
 #txs;macaddr;num_frames;num_acked;probe;rate0,count0,txpwr0;rate1,count1,txpwr1;rate2,count2,txpwr2;rate3,count3,txpwr3
 #rxs;macaddr;last_signal;signal0;signal1;signal2;signal3
 #stats;macaddr;rate;avg_prob;avg_tp;cur_success;cur_attempts;hist_success;hist_attempts
 #best_rates;macaddr;maxtp0;maxtp1;maxtp2;maxtp3;maxprob
 #sample_rates;macaddr;inc0;inc1;inc2;inc3;inc4;jump0;jump1;jump2;jump3;jump4;slow0;slow1;slow2;slow3;slow4
 #sample_table;cols;rows;column0;column1;column2;column3;column4;column5;column6;column7;column8;column9
-#start;txs;rxs;stats;sta;tprc_echo
-#stop;txs;rxs;stats;sta;tprc_echo
+#start;txs;rxs;stats;tprc_echo
+#stop;txs;rxs;stats;tprc_echo
 #set_rates;macaddr;rate0,count0;rate1,count1;rate2,count2;rate3,count3
 #set_power;macaddr;txpwr0;txpwr1;txpwr2;txpwr3
 #set_rates_power;macaddr;rate0,count0,txpwr0;rate1,count1,txpwr1;rate2,count2,txpwr2;rate3,count3,txpwr3
 #set_probe;macaddr;rate,count,txpwr
-#rc_mode;macaddr;mode
-#rc_mode;all;mode
+#rc_mode;macaddr;mode;update_freq;sample_freq
+#rc_mode;all;mode;update_freq;sample_freq
 #tpc_mode;macaddr;mode
 #tpc_mode;all;mode
 #reset_stats;macaddr
 #reset_stats;all
+#set_feature;feature;state
 group;0;0;ht;1;0;0;168980;b44c0;783c0;5a260;3c1e0;2d1a0;28180;24120;;
 group;1;10;ht;2;0;0;b44c0;5a260;3c1e0;2d1a0;1e170;16950;14140;12110;;
 group;2;20;ht;3;0;0;783d0;3c1e8;28198;1e170;14148;f130;d5d8;c060;;
@@ -115,6 +114,7 @@ The API currently provides the following commands:
 * [`set_rates_power`](#set_rates_power)
 * [`set_probe`](#set_probe)
 * [`reset_stats`](#reset_stats)
+* [`set_feature`](#set_feature)
 
 The commands are described in detail in the following subsections.
 
@@ -127,25 +127,25 @@ Print out the supported data rate set for each client already connected - useful
 	
 ---
 ### `start`
-Enable one or multiple monitoring tasks. Currently this command accepts tasks `txs`, `rxs`, `stats`, `sta` and `tprc_echo`. See below for explanation of each.   
+Enable one or multiple monitoring mode. Currently this command accepts mode `txs`, `rxs`, `stats`, `sta` and `tprc_echo`. See below for explanation of each.   
 		 
-**Full syntax:** `start;<task0>;<task1>;...;<taskX>` (multiple tasks can be chained)   
+**Full syntax:** `start;<mode0>;<mode1>;...;<modeX>` (multiple mode can be chained)   
 **Parameters:**   
 | | | |
 |:--|:--|:--|
-|`taskX`| `string` | A supported monitoring task, i.e. `txs`, `rxs`, `stats` or `tprc_echo`. See section *Monitoring tasks* below for explanation of each. |   
+|`modeX`| `string` | A supported monitoring mode, i.e. `txs`, `rxs`, `stats` or `tprc_echo`. See section *Monitoring modes* below for explanation of each. |   
 		 
 **Example:** `start;txs;rxs;tprc_echo`
 	
 ---
 ### `stop`  
-Disable one or multiple monitoring tasks.   
+Disable one or multiple monitoring mode.   
 		 
-**Full syntax**: `start;<task0>;<task1>;...;<taskX>` (multiple tasks can be chained)   
+**Full syntax**: `start;<mode0>;<mode1>;...;<modeX>` (multiple mode can be chained)   
 **Parameters:**   
 | | | |
 |:--|:--|:--|
-|`taskX`| `string` | A supported monitoring task, i.e. `txs`, `rxs`, `stats` or `tprc_echo`. See section *Monitoring tasks* below for explanation of each. |
+|`modeX`| A supported monitoring mode, i.e. `txs`, `rxs`, `stats` or `tprc_echo`. See section *Monitoring modes* below for explanation of each. |
 		 
 **Example:** `stop;txs;rxs;tprc_echo`
 	
@@ -153,16 +153,18 @@ Disable one or multiple monitoring tasks.
 ### `rc_mode`   
 Sets the Rate control operation mode for one or all connected STAs.  
 		 
-**Full syntax:** `rc_mode;<macaddr>;<mode>`   
+**Full syntax:** `rc_mode;<macaddr>;<mode>;<update_freq>;<sample_freq>`   
 **Parameters:**
 | | | |
 |:--|:--|:--|
-|`macaddr`| `string` | The MAC address of the STA for which the rc_mode should be set, e.g. `aa:bb:cc:dd:ee:ff`, or `all` to perform the action for all currently connected STAs. |
-|`mode`   | `string` | Either `auto` or `manual`. |
-|         | | In `auto` mode, kernel-space Minstrel-HT rate control is running and performing rate selection. |
-|         | | In `manual` mode, kernel-space Minstrel-HT is turned off and statistics and rate selection can be performed via the API. |
+|`macaddr`| The MAC address of the STA for which the rc_mode should be set, e.g. `aa:bb:cc:dd:ee:ff`, or `all` to perform the action for all currently connected STAs. |
+|`mode`   | Either `auto` or `manual`. |
+|         | In `auto` mode, kernel-space Minstrel-HT rate control is running and performing rate selection. |
+|         | In `manual` mode, kernel-space Minstrel-HT is turned off and statistics and rate selection can be performed via the API. |
+| `update_freq` | (optional) The frequency with which Minstrel-HT updates its statistics in Hz, specified as HEX. |
+| `sample_freq` | (optional) The frequency with which Minstrel-HT samples rates in Hz, specified as HEX. |
 		 
-**Example:** `rc_mode;aa:bb:cc:dd:ee:ff;manual` or `rc_mode;all;auto`   
+**Example:** `rc_mode;aa:bb:cc:dd:ee:ff;manual;20;50` or `rc_mode;all;auto`   
 
 ---
 ### `tpc_mode`   
@@ -247,6 +249,20 @@ Reset the Minstrel-HT statistics for one or all connected STAs.
 |:--|:--|
 | `macaddr` | The MAC address of the STA for which the statistics should be reset, e.g. `aa:bb:cc:dd:ee:ff`, or `all` to perform the action for all currently connected STAs. |
 
+**Example:** `reset_stats;aa:bb:cc:dd:ee:ff`
+
+### `set_feature`
+Set the state of a feature, e.g. enable/disable TPC, enable/disable adaptive sensitivity, etc.
+
+**Full syntax:** `set_feature;<feature>;<state>`
+**Parameters:**
+| | |
+|:--|:--|
+| `feature` | The identifier of a feature, e.g. adaptive_sens, tpc, force-rr, etc.
+| `state` | The state to be set for the feature. This must be an integer given in HEX. The meaning of the state depends on the feature, however on/off features like TPC typically use 0 for off and 1 for on. |
+
+**Example:** `set_feature;adaptive_sens;1`
+
 ---
 ### Command echoing
 
@@ -263,11 +279,14 @@ This feature is provided to ensure:
 * the mentioned commands do not have to be monitored separately and appear in the `api_event` log for full consistency and traceability
 * in case multiple clients capture the output of `api_event`, all clients know that one of the clients issued a command
 
-## `api_event` - Monitoring tasks
+For the command `set_rates`, `set_power`, `set_rates_power` and `set_probe` echoing is not enabled by default but can be turned on, e.g. for debugging purposes. 
+It can be enabled - analoguous to the monitoring modes - with the commands `start` and `stop` using the identifier `tprc_echo`, e.g. `start;tprc_echo`.
 
-For monitoring the status and events of a PHY, one or multiple monitoring tasks must be activated using the aforementioned `start` command. The available monitoring tasks are as followed with a short description. The format of each trace line that is emitted is explained below the table.
+## `api_event` - Monitoring modes
 
-| Monitoring task | Description |
+For monitoring the status and events of a PHY, one or multiple monitoring mode must be activated using the aforementioned `start` command. The available monitoring mode are as followed with a short description. The format of each trace line that is emitted is explained below the table.
+
+| Monitoring mode | Description |
 |:----------------|:------------|
 | `txs` | Monitor TX status events. Prints a `txs` trace line for each acknowledged transmitted frame. |
 | `rxs` | Monitor RX status events. Prints a `rxs` trace line for each received frame. |
@@ -275,7 +294,7 @@ For monitoring the status and events of a PHY, one or multiple monitoring tasks 
 | `tprc_echo` | Also echo the commands `set_rates`, `set_power`, `set_rates_power` and `set_probe`, analogous to the other commands. This is disabled by default due to possible performance issues caused by echoing these typically frequently used commands. |
 
 ### Monitoring information format
-Once the monitoring tasks have been triggered as mentioned above, the trace lines are printed to the corresponding `api_event` endpoint. Format of these lines is as follows:
+Once the monitoring modes have been triggered as mentioned above, the trace lines are printed to the corresponding `api_event` endpoint. Format of these lines is as follows:
 
 #### Format of trace for `txs` information
 ```
@@ -386,12 +405,19 @@ PHY-specific information is exposed separately so clients only need to read `api
 | `drv` | The driver name that is loaded for the current PHY. |
 | `if`  | Virtual interfaces associated with the current PHY. |
 | `tpc` | Transmit power control capabilities announced by the driver. |
+| `pwr_limit` | The current power limit that is configured by the user (e.g. via config). |
+| `mon` | Currently active monitor modes. |
+| `ftrs` | A list of supported features and their current states. |
+| `sta`(*) | None, one or multiple lines for each currently associated STA. The format is equal to the STA lines produced by `dump` or `start` **EXCEPT** for the `action``add` and the timestamp.
 
 An example output of `api_phy` may be:
 ```
 drv;ath9k
 if;wlan2
 tpc;mrr;1;0,40,0,2
+pwr_limit;30
+mon;txs
+ftrs;3;adaptive_sens,1;tpc,0;pwr-user,18
 ```
 
 ### Content format of `tpc`
@@ -405,6 +431,27 @@ tpc;<tpc_type>;<tpc_ranges>;<tpc_range_block0>;<tpc_range_block_1>
 | `<tpc_type>`         | `not`, `pkt` or `mrr`. Denotes the type of TPC support, respectively 'no support', 'tpc per packet' or 'tpc per mrr stage'.|
 | `<tpc_ranges>`       | Number of following TPC range blocks.|
 | `<tpc_range_blockX>` | One or multiple range blocks describing the different TPC power ranges that are supported. A range consists of a comma-separated 4-tuple with the values in order `start_idx`, `n_levels`, `start_pwr` and `pwr_step` (all HEX). Example: `0,40,0,2` describes a power range starting at idx 0 with 64 levels, the power level at idx 0 corresponds to (0 * 0.25) dBm and the range has a step width of (2 * 0.25 = 0.5) dBm. |
+
+### Content format of `ftrs`
+The content of the `ftrs` has the following syntax:
+```
+ftrs;<num_of_ftrs>;<ftr0_id>,<ftr0_state>;<ftr1_id>,<ftr1_state;...
+```
+
+| Parameter            | Description |
+|:---------------------|:------------|
+| `<num_of_ftrs>`      | Number of supported features and also number of following blocks a parser has to expect. |
+| `<ftrX_id>`          | Identifier of the feature, e.g. `tpc`, `adaptive_sens`, etc.|
+| `<ftrX_state>`       | The current state of the feature given as integer in HEX format. |
+
+### Available features
+ORCA provides an abstract interface to set several features/functions through the ORCA UAPI. Drivers can announce support for several of the currently supported features:
+
+| Identifier           | Description |
+|:---------------------|:------------|
+| | |
+
+**TODO**
 
 ## Typical workflow: Set MRR chain with rates, counts and tx power + validation
 
