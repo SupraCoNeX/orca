@@ -405,7 +405,7 @@ PHY-specific information is exposed separately so clients only need to read `api
 | `drv` | The driver name that is loaded for the current PHY. |
 | `if`  | Virtual interfaces associated with the current PHY. |
 | `tpc` | Transmit power control capabilities announced by the driver. |
-| `pwr_limit` | The current power limit that is configured by the user (e.g. via config). |
+| `pwr_limit` | The current power limit that is configured for the radio. This power limit includes all limiting factors, e.g. user power limit, calibration, regulatory limits. |
 | `mon` | Currently active monitor modes. |
 | `ftrs` | A list of supported features and their current states. |
 | `sta`(*) | None, one or multiple lines for each currently associated STA. The format is equal to the STA lines produced by `dump` or `start` **EXCEPT** for the `action``add` and the timestamp.
@@ -449,9 +449,14 @@ ORCA provides an abstract interface to set several features/functions through th
 
 | Identifier           | Description |
 |:---------------------|:------------|
-| | |
-
-**TODO**
+| `adaptive_sens`      | Adaptive sensitivity. Collective term for techniques/algorithms running in driver/firmware to continuously adapt the sensitivity/noise floor level to the environment. |
+| `tpc`                | Fine-grained Transmit Power Control (TPC). |
+| `force-rr`           | Force-Rate-Retry. mt7615-specific feature to prevent the driver/firmware from adjusting the MRR chain on its own. |
+| `pwr-ack`            | TX power for ACK frames. |
+| `pwr-rts`            | TX power for RTS/CTS frames. |
+| `pwr-chirp`          | TX power for Chirp frames. |
+| `pwr-rpt`            | TX power for Rpt frames. |
+| `pwr-user`           | TX power limit that was set by the user (e.g. via config). |
 
 ## Typical workflow: Set MRR chain with rates, counts and tx power + validation
 
