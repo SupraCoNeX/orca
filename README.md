@@ -114,7 +114,9 @@ The API currently provides the following commands:
 * [`set_rates_power`](#set_rates_power)
 * [`set_probe`](#set_probe)
 * [`reset_stats`](#reset_stats)
+* [`dump_features`](#dump_features)
 * [`set_feature`](#set_feature)
+* [`get`](#get)
 
 The commands are described in detail in the following subsections.
 
@@ -251,10 +253,21 @@ Reset the Minstrel-HT statistics for one or all connected STAs.
 
 **Example:** `reset_stats;aa:bb:cc:dd:ee:ff`
 
+---
+### `dump_features`
+Dumps all supported features and their current states as a 'ftrs' line. This can be used at runtime to monitor the states of features without having access to `api_phy` (e.g. via `orca_rcd`).
+
+**Full syntax:** `dump_features`   
+**Parameters:** `none`
+
+**Example:** `dump_features`   
+**Result:** `179bcbed680aefba;ftrs;4;adaptive_sens,1;tpc,0;pwr-user,f;force-rr,0`
+
+---
 ### `set_feature`
 Set the state of a feature, e.g. enable/disable TPC, enable/disable adaptive sensitivity, etc.
 
-**Full syntax:** `set_feature;<feature>;<state>`
+**Full syntax:** `set_feature;<feature>;<state>`   
 **Parameters:**
 | | |
 |:--|:--|
@@ -264,6 +277,21 @@ Set the state of a feature, e.g. enable/disable TPC, enable/disable adaptive sen
 **Example:** `set_feature;adaptive_sens;1`
 
 ---
+### `get`
+Get the value of the specified property. This can be used the query values/properties that are not available or only once in the beginning (as it is the case with `orca_rcd`).
+The result is issued as a `got` line (see example below).
+
+**Full syntax:** `get;<property>`   
+**Parameters:**
+| | |
+|:--|:--|
+| `property` | One of the supported properties to be read. Currently, only `pwr-limit` (to read the power limit via `get_txpower`) is supported. |
+
+**Example:** `get;pwr-limit`   
+**Result:** `179bcc3aeae5e192;got;pwr-limit;1e`
+
+---
+
 ### Command echoing
 
 The commands `start`, `stop`, `rc_mode`, `tpc_mode` and `reset_stats` are always echoed after execution. E.g., after having successfully executed the command
@@ -280,7 +308,8 @@ This feature is provided to ensure:
 * in case multiple clients capture the output of `api_event`, all clients know that one of the clients issued a command
 
 For the command `set_rates`, `set_power`, `set_rates_power` and `set_probe` echoing is not enabled by default but can be turned on, e.g. for debugging purposes. 
-It can be enabled - analoguous to the monitoring modes - with the commands `start` and `stop` using the identifier `tprc_echo`, e.g. `start;tprc_echo`.
+It can be enabled - analoguous to the monitoring modes - with the commands `start` and `stop` using the identifier `tprc_echo`, e.g. `start;tprc_echo`.   
+The commands `dump`, `dump_features` and `get` are not echoed as they always produce some kind of output.
 
 ## `api_event` - Monitoring modes
 
