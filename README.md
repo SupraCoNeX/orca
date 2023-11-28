@@ -51,7 +51,9 @@ orca_version;2;0;f
 #tpc_mode;all;mode
 #reset_stats;macaddr
 #reset_stats;all
+#dump_features
 #set_feature;feature;state
+#get;property
 group;0;0;ht;1;0;0;168980;b44c0;783c0;5a260;3c1e0;2d1a0;28180;24120;;
 group;1;10;ht;2;0;0;b44c0;5a260;3c1e0;2d1a0;1e170;16950;14140;12110;;
 group;2;20;ht;3;0;0;783d0;3c1e8;28198;1e170;14148;f130;d5d8;c060;;
@@ -434,7 +436,7 @@ PHY-specific information is exposed separately so clients only need to read `api
 | `drv` | The driver name that is loaded for the current PHY. |
 | `if`  | Virtual interfaces associated with the current PHY. |
 | `tpc` | Transmit power control capabilities announced by the driver. |
-| `pwr_limit` | The current power limit that is configured for the radio. This power limit includes all limiting factors, e.g. user power limit, calibration, regulatory limits. |
+| `pwr_limit` | The current power limit [**unit: half-dBm**] that is configured for the radio. This power limit includes all limiting factors, e.g. user power limit, calibration, regulatory limits. |
 | `mon` | Currently active monitor modes. |
 | `ftrs` | A list of supported features and their current states. |
 | `sta`(*) | None, one or multiple lines for each currently associated STA. The format is equal to the STA lines produced by `dump` or `start` **EXCEPT** for the `action``add` and the timestamp.
@@ -464,7 +466,7 @@ tpc;<tpc_type>;<tpc_ranges>;<tpc_range_block0>;<tpc_range_block_1>
 ### Content format of `ftrs`
 The content of the `ftrs` has the following syntax:
 ```
-ftrs;<num_of_ftrs>;<ftr0_id>,<ftr0_state>;<ftr1_id>,<ftr1_state;...
+ftrs;<num_of_ftrs>;<ftr0_id>,<ftr0_state>;<ftr1_id>,<ftr1_state>;...
 ```
 
 | Parameter            | Description |
@@ -481,11 +483,11 @@ ORCA provides an abstract interface to set several features/functions through th
 | `adaptive_sens`      | Adaptive sensitivity. Collective term for techniques/algorithms running in driver/firmware to continuously adapt the sensitivity/noise floor level to the environment. |
 | `tpc`                | Fine-grained Transmit Power Control (TPC). |
 | `force-rr`           | Force-Rate-Retry. mt7615-specific feature to prevent the driver/firmware from adjusting the MRR chain on its own. |
-| `pwr-ack`            | TX power for ACK frames. |
-| `pwr-rts`            | TX power for RTS/CTS frames. |
-| `pwr-chirp`          | TX power for Chirp frames. |
-| `pwr-rpt`            | TX power for Rpt frames. |
-| `pwr-user`           | TX power limit that was set by the user (e.g. via config). |
+| `pwr-ack`            | TX power for ACK frames. [**unit: half-dBm**] |
+| `pwr-rts`            | TX power for RTS/CTS frames. [**unit: half-dBm**] |
+| `pwr-chirp`          | TX power for Chirp frames. [**unit: half-dBm**] |
+| `pwr-rpt`            | TX power for Rpt frames. [**unit: half-dBm**] |
+| `pwr-user`           | TX power limit that was set by the user (e.g. via config) [**unit: dBm**]. |
 
 ## Typical workflow: Set MRR chain with rates, counts and tx power + validation
 
