@@ -378,7 +378,27 @@ In our example, rate `266` refers to the `6`th rate from group `26` and `272` re
 Keep in mind that the values are not absolute values in dBm, and the values are in HEX. The range and meaning of the values depends on what the driver defines for a WiFi device. Thus, they should be considered as abstract values. For example, ath9k defines power levels from 0 to 63, idx 0 corresponds to 0 dBm and the power levels have a value-distance of 0.5 dBm. Information about the power levels / ranges is exposed by `api_phy` and also given by Minstrel-RCD upon connecting, see [below](#api_phy---phy-specific-api-info) for a detailed explanation.
 
 ---
-#### Format of trace for `stats` information
+#### Format of `rxs` trace
+```
+<timestamp>;rxs;<macaddr>;<overall_signal>;<signal_chain1>;<signal_chain2>;<signal_chain3>;<signal_chain4>
+```
+
+| Field              | Description |
+|:-------------------|:------------|
+| `<timestamp>`      | Timestamp for system time (Unix epoch time) in nanoseconds in hex format. |
+| `rxs`              | Denotes that the trace contains an RX status for a received frame. |
+| `<macaddr>`        | MAC address of the station/client for which trace is received.|
+| `<overall_signal>` | (signed 8-bit) The overall signal strength of the received frame. |
+| `<signal_chainX>`  | (signed 8-bit) The signal strengths of the single antennas/RX chains. This depends on what the driver delivers, otherwise the corresponding field has the value `7f`. |
+
+E.g.
+```
+phy1;17b67123fc065a5e;rxs;52:4a:6f:f3:c4:95;d3;ce;d1;7f;7f
+```
+Received a frame from a station with an overall signal strength of `-45` dBm (`d3`) and signal strengths of `-50` dBm (`ce`) on chain 1 and `-47` dBm (`d1`) on chain 2. Chain 3 and 4 are not delivered since the WiFi chip only has 2 antennas/RX chains.
+
+---
+#### Format of `stats` trace
 ```
 <timestamp>;stats;<macaddr>;<rate>;<avg_prob>;<avg_tp>;<cur_success>;<cur_attempts>;<hist_success>;<hist_attempts>
 ```
@@ -396,7 +416,7 @@ Keep in mind that the values are not absolute values in dBm, and the values are 
 | `<hist_success>`  | Number of successes in the last interval. |
 | `<hist_attempts>` | Number of attempts in the last interval. |
 
-E.g. 1. 
+E.g.
 ```
 phy1;17503da1e84dea50;stats;04:f0:21:26:d9:25;c4;3e8;1a2;1;1;3f9;400
 ```
@@ -404,7 +424,7 @@ phy1;17503da1e84dea50;stats;04:f0:21:26:d9:25;c4;3e8;1a2;1;1;3f9;400
 > TODO: Explain example
 
 ---
-#### Format of trace for `best_rates` information
+#### Format of `best_rates` trace
 
 ```
 phy1;<timestamp>;best_rates;<macaddr>;<maxtp0>;<maxtp1>;<maxtp2>;<maxtp3>;<maxprob>
