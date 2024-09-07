@@ -30,27 +30,24 @@ wifi device in `/sys/kernel/debug/ieee80211/<phy>/rc/`:
 
 Example output of `api_info` for a PHY (`/sys/kernel/debug/ieee80211/<phy>/rc/api_info`):
 ```
-orca_version;2;0;f
+orca_version;3;0;0
 #group;index;offset;type;nss;bw;gi;airtime0;airtime1;airtime2;airtime3;airtime4;airtime5;airtime6;airtime7;airtime8;airtime9
-#sta;action;macaddr;iface;rc_mode;tpc_mode;overhead_mcs;overhead_legacy;update_freq;sample_freq;mcs0;mcs1;mcs2;mcs3;mcs4;mcs5;mcs6;mcs7;mcs8;...
+#sta;action;macaddr;iface;rc_mode;tpc_mode;overhead_mcs;overhead_legacy;update_freq;sample_freq;mcs0;mcs1;mcs2;mcs3;mcs4;mcs5;mcs6;mcs7;mcs8;mcs9;mcs10;mcs11;mcs12;mcs13;mcs14;mcs15;mcs16;mcs17;mcs18;mcs19;mcs20;mcs21;mcs22;mcs23;mcs24;mcs25;mcs26;mcs27;mcs28;mcs29;mcs30;mcs31;mcs32;mcs33;mcs34;mcs35;mcs36;mcs37;mcs38;mcs39;mcs40;mcs41
 #txs;macaddr;num_frames;num_acked;probe;rate0,count0,txpwr0;rate1,count1,txpwr1;rate2,count2,txpwr2;rate3,count3,txpwr3
-#rxs;macaddr;last_signal;signal0;signal1;signal2;signal3
+#rxs;macaddr;overall_signal;signal_chain0;signal_chain1;signal_chain2;signal_chain3
 #stats;macaddr;rate;avg_prob;avg_tp;cur_success;cur_attempts;hist_success;hist_attempts
 #best_rates;macaddr;maxtp0;maxtp1;maxtp2;maxtp3;maxprob
 #sample_rates;macaddr;inc0;inc1;inc2;inc3;inc4;jump0;jump1;jump2;jump3;jump4;slow0;slow1;slow2;slow3;slow4
 #sample_table;cols;rows;column0;column1;column2;column3;column4;column5;column6;column7;column8;column9
-#start;txs;rxs;stats;tprc_echo
-#stop;txs;rxs;stats;tprc_echo
+#start;iface;txs,rxs,stats,tprc_echo
+#stop;iface;txs,rxs,stats,tprc_echo
 #set_rates;macaddr;rate0,count0;rate1,count1;rate2,count2;rate3,count3
 #set_power;macaddr;txpwr0;txpwr1;txpwr2;txpwr3
 #set_rates_power;macaddr;rate0,count0,txpwr0;rate1,count1,txpwr1;rate2,count2,txpwr2;rate3,count3,txpwr3
 #set_probe;macaddr;rate,count,txpwr
 #rc_mode;macaddr;mode;update_freq;sample_freq
-#rc_mode;all;mode;update_freq;sample_freq
 #tpc_mode;macaddr;mode
-#tpc_mode;all;mode
 #reset_stats;macaddr
-#reset_stats;all
 #dump_features
 #set_feature;feature;state
 #get;property
@@ -96,7 +93,7 @@ group;26;260;vht;1;2;1;48230;241a0;18128;12158;c0a8;9130;8080;7430;60e0;5730
 group;27;270;vht;2;2;1;241a0;12158;c0ac;9134;60e0;4924;4058;3a34;3088;2c24
 group;28;280;vht;3;2;1;18128;c0ac;8084;60e0;405a;3088;2b42;26de;20b6;1d32
 group;29;290;vht;4;2;1;1215a;9136;60e0;4924;3088;251c;20b6;1d32;18ce;162a
-sample_table;a;a;6,8,9,2,1,5,3,4,0,7;8,9,0,2,4,6,1,7,3,5;1,4,5,3,7,9,2,0,6,8;7,8,9,6,3,1,0,4,2,5;8,6,9,0,3,2,4,1,5,7;6,8,9,0,1,4,7,3,5,2;0,1,6,7,3,4,8,9,5,2;4,5,6,2,1,7,8,9,3,0;6,8,0,1,7,9,4,2,3,5;5,0,1,6,8,7,9,4,3,2
+sample_table;a;a;9,1,5,8,6,4,7,0,3,2;8,2,7,9,4,1,0,3,5,6;8,2,9,0,3,4,7,5,6,1;9,1,7,0,8,4,2,3,5,6;0,2,5,6,4,7,8,3,1,9;1,6,9,4,2,7,8,3,0,5;9,5,3,0,1,4,6,2,7,8;9,5,2,8,4,1,0,3,7,6;3,1,5,7,8,9,0,4,6,2;8,6,1,3,7,4,0,5,2,9
 ```
 
 **Lines starting with `#` are format lines. They describe the exact format of all output lines and commands.**
@@ -313,7 +310,46 @@ For the command `set_rates`, `set_power`, `set_rates_power` and `set_probe` echo
 It can be enabled - analoguous to the monitoring modes - with the commands `start` and `stop` using the identifier `tprc_echo`, e.g. `start;tprc_echo`.   
 The commands `dump`, `dump_features` and `get` are not echoed as they always produce some kind of output.
 
-## `api_event` - Monitoring modes
+## `api_event` 
+
+`api_event` is the exported file in the debugfs, backed by relayfs, that is used by ORCA UAPI to relay event information to clients in userspace. Most of the events can be enabled/disabled via monitoring modes, however, some kinds of events are always printed. 
+
+### Station events
+
+Beside the aforementioned command echoing, this applies also to the following:
+- station adding
+- station dump
+- station capabilities update
+- station removal
+*Station dumping has to be specifically requested with the `dump` command.*
+
+In case of these events, station action lines are emitted. The format syntax is as follows:
+```
+<timestamp>;sta;<action>;<macaddr>;<iface>;<rc_mode>;<tpc_mode>;<overhead>;<overhead_legacy>;<update_interval>;<sampling_interval>;<supported_rates>
+```
+
+| Field			| Description |
+|:----------------------|:------------|
+| `timestamp`		| Timestamp for system time (Unix epoch time) in nanoseconds in hex format. |
+| `action`		| Can be `add`, `dump`, `update` or `remove`. |
+| `macaddr`		| MAC address of the affected station. |
+| `iface`		| Name of the interface this station is connected to. |
+| `rc_mode`		| Current rc_mode of the station. |
+| `tpc_mode`		| Current tpc_mode of the station. |
+| `overhead`		| **TBD**
+| `overhead_legacy`	| **TBD**
+| `update_interval`	| Rate selection update interval. |
+| `sampling_interval`	| Rate sampling interval. |
+| `supported_rates`	| Bitmap of supported MCS rates in Minstrel group encoding. |
+
+e.g.
+```
+wl2;0;sta;add;aa:bb:cc:dd:ee:ff;wl2-ap0;auto;auto;6c;3c;14;32;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;0;1ff;1ff;0;0;1ff;1ff;0;0;3ff;3ff;0;0;3ff;3ff;0;0;3ff;3ff;0;0;3ff;3ff;0;0
+```
+
+> TODO: explain example
+
+### Monitoring events
 
 For monitoring the status and events of a PHY, one or multiple monitoring mode must be activated using the aforementioned `start` command. The available monitoring mode are as followed with a short description. The format of each trace line that is emitted is explained below the table.
 
