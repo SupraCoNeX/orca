@@ -33,7 +33,9 @@ The source code is available in [orca-rcd](https://github.com/SupraCoNeX/orca-rc
 
 ### RateMan
 
-TBD
+RateMan (Rate Manager) is a userspace utility implemented in Python that connects to ORCA-RCD of multiple nodes and provides functionality to work with multiple access points and perform centralised rate control.
+
+The source code is available in [scnx-rateman](https://github.com/SupraCoNeX/scnx-rateman).
 
 ### MMRS
 
@@ -42,7 +44,7 @@ TBD
 ## How to get started
 
 To have a simple setup to work with ORCA you need:
-- (a) a WiFi-capable device which is supported by OpenWrt, see [here](https://openwrt.org/supported_devices). Please note that ORCA currently only works with WiFi standards 802.11 a/b/g/n/ac.
+- (a) a WiFi-capable device which is supported by OpenWrt, see [here](https://openwrt.org/supported_devices). *Please note that ORCA currently only works with WiFi standards 802.11 a/b/g/n/ac.*
 - (b) a WiFi client device, e.g. your smartphone
 - (c) a device that can run Python packages and is performance-wise able to act as a controller
 
