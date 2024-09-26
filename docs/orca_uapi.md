@@ -546,28 +546,30 @@ ORCA provides an abstract interface to set several features/functions through th
 
 Perform the following steps to set an MRR chain:
 	
-	1. Enable txs monitoring for a given STA using the command:
-	```
-	start;txs
-	```
-	This command enables a continuous stream of TX status traces to be able to immediately validate the MRR setting.
- 	2. Enable TPC feature
-  	```
-	set_feature;tpc;1
-   	```
-    	This command enables the TPC feature for a PHY. This step is only necessary in case it is turned of by default.
-	2. Enable manual MRR setting using the command:
-	```
-	rc_mode;<macaddr>;manual
-	tpc_mode;<macaddr>;manual
-	```
-	This command disables the default kernel-space Minstrel-HT rate control algorithm and the current TX power control behaviour. `tpc_mode` can be omitted in case `set_rates` is used to only set rates and counts.
-	
-	3. Set desired MRR chain using the command:
-	```
-	set_rates_power;<macaddr>;<stage0>;<stage1>;<stage2>;<stage3>
-	```    
-	See the command description [above](#api_control---commands) for the detailed format of the command.
+1. Enable txs monitoring for a given STA using the command:
+```
+start;txs
+```
+This command enables a continuous stream of TX status traces to be able to immediately validate the MRR setting.
+
+2. Enable TPC feature
+```
+set_feature;tpc;1
+```
+This command enables the TPC feature for a PHY. This step is only necessary in case it is turned of by default.
+
+3. Enable manual MRR setting using the command:
+```
+rc_mode;<macaddr>;manual
+tpc_mode;<macaddr>;manual
+```
+This command disables the default kernel-space Minstrel-HT rate control algorithm and the current TX power control behaviour. `tpc_mode` can be omitted in case `set_rates` is used to only set rates and counts.
+
+4. Set desired MRR chain using the command:
+```
+set_rates_power;<macaddr>;<stage0>;<stage1>;<stage2>;<stage3>
+```    
+See the command description [above](#api_control---commands) for the detailed format of the command.
 
 ## Minstrel-HT Rate Control Statistics
 
@@ -654,4 +656,4 @@ Furthermore, the existing rate control infrastructure is extended to include the
 ```
 The TX power is then annotated in this per-STA rate table as an index into the list of power levels that is defined by the aforementioned TX power ranges.
 
-> Corresponding changes for the TX status path in mac80211 are NOT included in this patchset. They are already introduced in Linux kernel as per commit `[44fa75f207](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=44fa75f207d8a106bc75e6230db61e961fdbf8a8)`.
+> Corresponding changes for the TX status path in mac80211 are NOT included in this patchset. They are already introduced in Linux kernel as per commit [`44fa75f207`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=44fa75f207d8a106bc75e6230db61e961fdbf8a8).
