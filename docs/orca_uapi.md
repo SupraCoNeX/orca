@@ -1,15 +1,12 @@
-# Open-Source Resource Control API (ORCA)
+# ORCA-UAPI
 
-The rate control API enables to access information and control parameters of kernel space rate-control from the user space. In addition to enabling monitoring of status information, the API allows to execute routines to perform rate setting based on an algorithm implemented in user space. The API is designed for WiFi systems running a Linux kernel in general. However, our testing only includes OpenWrt-based WiFi Systems.
+The ORCA-UAPI enables local access to information and control parameters of kernel space rate-control from the user space. In addition to enabling monitoring of status information, the UAPI allows to execute routines to perform rate setting based on an algorithm implemented in user space. The UAPI is designed for WiFi systems running a Linux kernel in general. However, our testing only includes OpenWrt-based WiFi Systems.
 
-Latest version of OpenWrt with the patches related to the Rate Control API is available at
-
+Latest version of OpenWrt with the patches and changes related to ORCA-UAPI is available at
 [https://github.com/SupraCoNeX/scnx-openwrt](https://github.com/SupraCoNeX/scnx-openwrt)
 
-The API's core components are:
-
-Based on OpenWrt Linux kernel patches and patchset to enable in OpenWrt that exports Python-based package for
- - Monitoring of status through TX status (`txs`), Received Signal Strength Indicator (`rxs`), and Rate control statistics (`stats`) information of one or more access points in a network.
+The UAPI provides:
+ - Monitoring of transmission status through `txs`, Received Signal Strength Indicator (`rxs`), and Rate control statistics (`stats`) information of an access point.
  - Rate and TX power control through setting of appropriate MRR chain per client/station per access point.
  - Data collection and management of network measurements.
 
@@ -549,33 +546,114 @@ ORCA provides an abstract interface to set several features/functions through th
 
 Perform the following steps to set an MRR chain:
 	
-	1. Enable txs monitoring for a given STA using the command:
-	```
-	start;txs
-	```
-	This command enables a continuous stream of TX status traces to be able to immediately validate the MRR setting.
-			 
-	2. Enable manual MRR setting using the command:
-	```
-	rc_mode;<macaddr>;manual
-	tpc_mode;<macaddr>;manual
-	```
-	This command disables the default kernel-space Minstrel-HT rate control algorithm and the current TX power control behaviour. `tpc_mode` can be omitted in case `set_rates` is used to only set rates and counts.
-		
-	3. Set desired MRR chain using the command:
-	```
-	set_rates_power;<macaddr>;<stage0>;<stage1>;<stage2>;<stage3>
-	```    
-	See the command description [above](#api_control---commands) for the detailed format of the command.
+1. Enable txs monitoring for a given STA using the command:
+```
+start;txs
+```
+This command enables a continuous stream of TX status traces to be able to immediately validate the MRR setting.
+
+2. Enable TPC feature
+```
+set_feature;tpc;1
+```
+This command enables the TPC feature for a PHY. This step is only necessary in case it is turned of by default.
+
+3. Enable manual MRR setting using the command:
+```
+rc_mode;<macaddr>;manual
+tpc_mode;<macaddr>;manual
+```
+This command disables the default kernel-space Minstrel-HT rate control algorithm and the current TX power control behaviour. `tpc_mode` can be omitted in case `set_rates` is used to only set rates and counts.
+
+4. Set desired MRR chain using the command:
+```
+set_rates_power;<macaddr>;<stage0>;<stage1>;<stage2>;<stage3>
+```    
+See the command description [above](#api_control---commands) for the detailed format of the command.
 
 ## Minstrel-HT Rate Control Statistics
 
 ![alt tag](https://user-images.githubusercontent.com/79704080/112141900-385fd980-8bd6-11eb-99a2-5c18ff8e37e5.PNG)
 
 > TODO: Add description of variables in table
-		 
+
+## Feature-Control interface
+
+To support querying and controlling several features of WiFi chipsets, a new, currently out-of-tree interface was introduced and implemented. This currently covers the following features:
+- RTS/CTS, ACK, etc. tx power setting on ath9k
+- enable/disable TPC
+- set user TX power limit
+- mt7615-only force-rate-retry
+- enable/disable adaptive sensitivity (ath9k calls this ANI, mt76 calls this SCS or dynamic sensitivity)
+
+While some of the features also may have been controlled via existing interfaces/structures (e.g. `ieee80211_conf`), not all demands could be satisfied with the existing interfaces. Thus, we decided to implement a new interface. Most notably, other interfaces do not support a proper direct/immediate access to the driver's features.
+
+The implementation currently consists of the following patches:
+- `package/kernel/mac80211/patches/subsys`
+	- `8900-mac80211-add-unified-control-for-adaptive-sensitivity.patch`
+   	- `9007-mac80211-add-further-control-knobs-in-feature-control-interface.patch`
+- `package/kernel/mac80211/patches/ath9k`
+  	- `8900-ath9k_support-setting-adaptive-sensitivity-through-mac80211.patch`
+  	- `9008-ath9k_add-support-for-further-control-knobs-via-feature-ctrl.patch`
+- `package/kernel/mt76/patches`
+  	- `200-mt7615-add-control-of-adaptive-sensitivity-through-mac80211.patch`
+  	- `201-mt7603-add-control-of-adaptive-sensitivity-through-mac80211.patch`
+  	- `202-mt7615-add-support-for-further-control-knobs-through-feature-ctrl.patch`
+
+In addition to that, several patches depend on these patches and ORCA comes with built-in support for this interface.
+
 ## Transmit Power Control in the Linux kernel
 
-Fine-grained Transmit Power Control (TPC) is introduced alongside our API, to be able to take the transmission power as another degree of freedom into account, e.g. for a joint RC-TPC algorithm.
-Our TPC patches against the Linux kernel for fine-grained TPC use indices into a driver-specified list as representation of individual TX-power levels instead of absolute dBm values to annotate transmit power. This has several advantages, most notably better support for different hardware capabilities. When a driver registers a new WiFi device at the mac80211 layer, it must specify the type of TPC support and the power levels it supports. The power levels are specified by so-called tx-power ranges. A range describes a discrete, sequentially indexed set of power levels with a fixed value-distance. To support special capabilities such as (0..10 dBm in 0.5 dBm steps) + (10..20 dBm in 1 dBm steps), drivers can specify multiple power ranges. When a TX-power value is specified for a packet or an MRR-stage, it should be considered as a list index into the TX-power level list that is defined by the previously mentioned TX-power ranges. The same applies to the TX-power values that are reported by the driver in the TX-status. To avoid confusion, struct members and variables for fine-grained TPC in the mac80211 subsystem itself are usually called 'txpower_idx'. Drivers may and should only use identifiers like 'txpower' after they converted the TX-power index into their internal representation. Valid tx-power indices are always `>= 0` per definition. However, a value of `-1` can be specified to pass the decision about the tx-power to use to the driver. For example, ath9k uses the maximum allowed tx-power when `-1` is specified.
-> TO BE REVISED
+A few WiFi chipsets have extended control capabilities for the transmission power. In detail, this is the case for the Atheros 802.11 a/b/g/n AR9xxx and MT7615 chipsets we were focusing on. They allow fine-grained TPC (transmit power control) per-frame, however, the mac80211 subsystem doesn't provide any support or infrastructure for that. Thus, we also introduced a patchset alongside ORCA-UAPI that adds support for this to mac80211 and ath9k and mt76 drivers.   
+This current patchset consists of:
+- `package/kernel/mac80211/patches/subsys`
+ 	- `9000-mac80211-modify-tx-power-level-annotation.patch`
+   	- `9001-mac80211-add-tx-power-annotation-in-control-path.patch`
+   	- `9002-mac80211-add-hardware-flags-for-TPC-support.patch`
+   	- `9003-mac80211-add-utility-function-for-tx_rate-rate_info-conversion.patch`
+   	- `9004-mac80211-minstrel_ht-add-proper-handling-of-tx-power-control.patch`
+   	- `9005-mac80211-add-tpc-feature-setting-via-mac80211.patch` *
+   	- `9006-mac80211-add-ctrl-frame-tpc-setting-via-mac80211.patch` *
+- `package/kernel/mac80211/patches/ath9k`
+	- `9000-ath9k_register-hw-with-tx-power-levels.patch`
+   	- `9001-ath9k_include-tx-power-in-tx-control-path.patch`
+   	- `9002-ath9k_report-back-tx-power-in-status-path.patch`
+   	- `9004-ath9k_export-max-power-per-ratetbl-to-debugfs.patch`
+   	- `9005-ath9k_allow-enabling-disabling-tpc-via-mac80211-feature-interface.patch` *
+   	- `9006-ath9k_allow-get-txpower-without-vif.patch`
+   	- `9007-ath9k_add-support-for-control-frame-tpc.patch` *
+- `package/kernel/mt76/patches`
+  	- `9000-mt7615-add-TPC-control-infrastructure.patch`
+  	- `9005-mt7615-enable-disable-TPC-via-feature-control-interface.patch` *
+  	- `9010-mt7615-report-tx-power-in-tx-status.patch`
+
+> Patches marked with * depend on the out-of-tree feature-control interface introduced alongside with ORCA!
+
+The patchset introduces an abstraction of the TPC capabilities of different WiFi chipsets:
+```
+struct ieee80211_hw_txpower_range {
+	u8 start_idx;
+	u8 n_levels;
+	s8 start_pwr;
+	s8 pwr_step;
+};
+```
+Valid tx-power indices are always `>= 0` per definition. However, a value of `-1` can be specified to pass the decision about the tx-power to use to the driver. For example, ath9k uses the maximum allowed tx-power when `-1` is specified.   
+This structure has to be used by drivers to specify their supported transmit power levels by defining one or multiple ranges which are **discrete, sequentially indexed sets of power levels with a fixed value-distance**. Each driver aiming to support this has to provide this and additional information during PHY registration at the mac80211 subsystem.
+
+Furthermore, the existing rate control infrastructure is extended to include the transmit power:
+```diff
+ struct ieee80211_sta_rates {
+ 	struct rcu_head rcu_head;
+	struct {
+		s8 idx;
+ 		u8 count_cts;
+ 		u8 count_rts;
+ 		u16 flags;
++		s16 txpower_idx;
+ 	} rate[IEEE80211_TX_RATE_TABLE_SIZE];
+ };
+```
+The TX power is then annotated in this per-STA rate table as an index into the list of power levels that is defined by the aforementioned TX power ranges.
+
+> Corresponding changes for the TX status path in mac80211 are NOT included in this patchset. They are already introduced in Linux kernel as per commit [`44fa75f207`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=44fa75f207d8a106bc75e6230db61e961fdbf8a8).
