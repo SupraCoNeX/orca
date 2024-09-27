@@ -59,3 +59,21 @@ If you have a proper device, you can proceed with:
 
 Your device is now properly prepared for usage with ORCA.
 Now head over to your controller device (c) to setup the Python-based components of ORCA. Fur further installation instructions, refer to the repository of RateMan [scnx-rateman](https://github.com/SupraCoNeX/scnx-rateman).
+
+## Citing ORCA-based WiFi Resource Control Toolchain 
+
+If you use ORCA and its toolchain in your research, please cite our work using the following reference.
+
+```bibtex
+@inproceedings{orcawifirc,
+	title        = {Open-source Resource Control API for real IEEE 802.11 Networks},
+	author       = {Sankalp Prakash Pawar and Prashiddha Dhoj Thapa and Jonas Jelonek and Martin Le and Arne Kappen and Nick Hainke and Thomas Huehn and Julius Schulz-Zander and Henrike Wissing and Felix Fietkau},
+	year         = 2024,
+	booktitle    = {The 30th Annual International Conference on Mobile Computing and Networking (ACM MobiCom '24), November 18--22, 2024, Washington D.C., DC, USA},
+	location     = {Washington D.C., DC, USA},
+	publisher    = {ACM},
+	address      = {New York, NY, USA},
+	doi          = {10.1145/3636534.3697314},
+	isbn         = {979-8-4007-0489-5/24/11}
+}
+```
