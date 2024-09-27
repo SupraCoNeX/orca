@@ -34,3 +34,16 @@ TBD
 
 TBD
 
+## If you use them in your research, please cite our software packages using the following reference.
+
+@inproceedings{orcawifirc,
+	title        = {Open-source Resource Control API for real IEEE 802.11 Networks},
+	author       = {First Author and Second Author},
+	year         = 2024,
+	booktitle    = {The 30th Annual International Conference on Mobile Computing and Networking (ACM MobiCom '24), November 18--22, 2024, Washington D.C., DC, USA},
+	location     = {Washington D.C., DC, USA},
+	publisher    = {ACM},
+	address      = {New York, NY, USA},
+	doi          = {10.1145/3636534.3697314},
+	isbn         = {979-8-4007-0489-5/24/11}
+}
