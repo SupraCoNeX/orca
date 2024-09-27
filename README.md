@@ -64,7 +64,7 @@ Now head over to your controller device (c) to setup the Python-based components
 
 If you use ORCA and its toolchain in your research, please cite our work using the following reference.
 
-```
+```bibtex
 @inproceedings{orcawifirc,
 	title        = {Open-source Resource Control API for real IEEE 802.11 Networks},
 	author       = {Sankalp Prakash Pawar and Prashiddha Dhoj Thapa and Jonas Jelonek and Martin Le and Arne Kappen and Nick Hainke and Thomas Huehn and Julius Schulz-Zander and Henrike Wissing and Felix Fietkau},
